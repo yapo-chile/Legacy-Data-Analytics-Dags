@@ -6,15 +6,20 @@ from lib.slack_msg import slack_msg_body
 #TODO incorporar get_date common
 
 from airflow import models
-from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
 from airflow.contrib.operators.ssh_operator import SSHOperator
 from airflow.contrib.hooks.ssh_hook import SSHHook
+from airflow.models.variable import Variable
+from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
 
-SLACK_CONN_ID = 'slack'
-sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
 
+sshHook = SSHHook(ssh_conn_id="ssh_public_rundeck") # TODO: cuando SRE establezca conexión entre pentaho y dockerhost este param debería ser "ssh_public_pentaho"
+connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
+SLACK_CONN_ID = "slack"
+
+# Define Docker image
+docker_image = "registry.gitlab.com/yapo_team/legacy/data-analytics/data-content:0b86a929_lead-and-unique-lead"
 # Define schedule interal
-schedule_interval = '0 6 * * *'  # This example scheduled at daily 6 AM
+schedule_interval = "0 6 * * *"  # This example scheduled at daily 6 AM
 # Define slack msg params
 riskiness = "Medium"  # or High or Low
 utility = "This etl generates ... data in DWH."
@@ -24,7 +29,7 @@ default_args = {
     # fixed point in time rather than dynamically, since it is evaluated every
     # time a DAG is parsed. See:
     # https://airflow.apache.org/faq.html#what-s-the-deal-with-start-date
-    "start_date": datetime(2022, 7, 5),
+    "start_date": datetime(2022, 6, 23),
 }
 
 
@@ -37,7 +42,7 @@ def get_date():
     else:
         execution_date = "{{ dag_run.logical_date }}"
         execution_date = execution_date - timedelta(days=1)
-        execution_date = execution_date.date().strftime('%Y-%m-%d')
+        execution_date = execution_date.date().strftime("%Y-%m-%d")
         date = {"start_date": execution_date, "end_date": execution_date}
     return date
 
@@ -59,27 +64,32 @@ def task_fail_slack_alert(context):
 
 
 with models.DAG(
-    "trigger_bi-insight-dw_blocketdb-kpis_operacionales",
-    tags=[
-        "production",
-        "ETL",
-        "trigger",
-        "core",
-        "git: legacy/bi-insight",
-        "input: dwh",
-        "output: dwh",
-    ],
-    schedule_interval=schedule_interval,
-    default_args=default_args,
-    max_active_runs=1,
-    on_failure_callback=task_fail_slack_alert
+        "trigger_data_content_lead_and_unique_leads",
+        tags=[
+            "production",
+            "ETL",
+            "trigger",
+            "core",
+            "git: legacy/data-content",
+            "input: dwh",
+            "output: dwh",
+        ],
+        schedule_interval=schedule_interval,
+        default_args=default_args,
+        max_active_runs=1,
+        on_failure_callback=task_fail_slack_alert
 ) as dag:
 
-    run_kpi_operacionales = SSHOperator(
-        task_id="run_kpi_operacionales",
+    run_lead_and_unique_lead = SSHOperator(
+        task_id="run_lead_and_unique_lead",
         ssh_hook=sshHook,
-        command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/kpis_operacionales/run_jb_kpis_operacionales.sh "
+        command=f"""{connect_dockerhost} <<EOF \n
+                sudo docker pull {docker_image} \n
+                sudo docker run -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
+                        -e APP_DB_SECRET=/app/db-secret \
+                        {docker_image} \
+                        -date_from={get_date()["start_date"]} \
+                        -date_to={get_date()["end_date"]}"""
     )
 
-    run_kpi_operacionales
-
+    run_lead_and_unique_lead
