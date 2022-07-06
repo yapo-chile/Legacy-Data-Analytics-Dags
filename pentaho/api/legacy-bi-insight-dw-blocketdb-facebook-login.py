@@ -13,7 +13,7 @@ from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
-dag_name = "trigger-bi-insight-dw_blocketdb-fb_login"
+dag_name = "legacy-bi-insight-dw_blocketdb-fb_login"
 dag_tags = [
     "production",
     "ETL",
