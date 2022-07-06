@@ -26,8 +26,7 @@ schedule_interval = "<SCHEDULE_INTERVAL>"  # This example scheduled at daily 6 A
 riskiness = "<RISKINESS>"  # High, Medium or Low
 utility = "<UTILITY_OF_DAG>"  # Example: "This etl generates ... data in DWH."
 
-# TODO: cuando SRE establezca conexión entre pentaho y dockerhost este param debería ser "ssh_public_pentaho"
-sshHook = SSHHook(ssh_conn_id="ssh_public_rundeck")
+sshHook = SSHHook(ssh_conn_id="ssh_public_aws")
 connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
 SLACK_CONN_ID = "slack"
 
