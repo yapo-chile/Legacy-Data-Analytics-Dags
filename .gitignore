@@ -1,0 +1,14 @@
+bin
+lib
+pyvenv.cfg
+secrets.mk
+include
+*.pyc
+.DS_Store
+__pycache__
+.idea
+dag-temp.py
+
+#Visual Code
+
+.vscode/*
