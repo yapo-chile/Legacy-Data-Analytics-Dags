@@ -22,7 +22,7 @@ dag_tags = [
     "ETL",
     "schedule",
     "dockerhost",
-    "Legacy",
+    "legacy",
     "git: legacy/data-content",
     "input: dwh",
     "input: zendesk",
