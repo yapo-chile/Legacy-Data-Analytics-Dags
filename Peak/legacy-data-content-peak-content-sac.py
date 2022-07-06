@@ -26,7 +26,7 @@ dag_tags = [
     "git: legacy/data-content",
     "input: dwh",
     "input: zendesk",
-    "input: surveypal API"
+    "input: surveypal API",
     "output: dwh"]
 # Docker image
 docker_image = "registry.gitlab.com/yapo_team/legacy/data-analytics/data-content:71ae4cac_peak-content-sac"
