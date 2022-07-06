@@ -13,7 +13,7 @@ from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
-dag_name = "legacy_bi-insight-dw_blocketdb-fb_login"
+dag_name = "legacy_bi-insight-dw-blocketdb_implio_classification"
 dag_tags = [
     "production",
     "ETL",
@@ -25,10 +25,10 @@ dag_tags = [
     "legacy",
 ]
 # Schedule interal
-schedule_interval = "0 7 * * *"  # This example scheduled at daily 6 AM: "0 6 * * *"
+schedule_interval = "30 10 * * *"  # This example scheduled at daily 6 AM: "0 6 * * *"
 # Slack msg
 riskiness = "Medium"  # High, Medium or Low
-utility = "Legacy etl related to facebook login"  # Example: "This etl generates ... data in DWH."
+utility = "Legacy etl related to Implio Classification"  # Example: "This etl generates ... data in DWH."
 
 SLACK_CONN_ID = "slack"
 sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
@@ -69,10 +69,10 @@ with models.DAG(
     on_failure_callback=task_fail_slack_alert,
 ) as dag:
 
-    run_fb_login = SSHOperator(
-        task_id="task_run_fb_login",
+    run_implio_classification = SSHOperator(
+        task_id="task_run_implio_classification",
         ssh_hook=sshHook,
-        command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/run_etl_fb_login.sh ",  # You need add a space at the end of the command, to avoid error: Jinja template not found
+        command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/implio-classification/run_implio.sh ",  # You need add a space at the end of the command, to avoid error: Jinja template not found
     )
 
-    run_fb_login
+    run_implio_classification
