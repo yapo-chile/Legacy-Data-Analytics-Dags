@@ -13,7 +13,7 @@ from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
-dag_name = "legacy_bi-insight-dw-blocketdb_active_ads"
+dag_name = "legacy_bi-insight-dw-blocketdb_daily_active_ads"
 dag_tags = [
     "production",
     "ETL",
@@ -25,10 +25,10 @@ dag_tags = [
     "legacy",
 ]
 # Schedule interal
-schedule_interval = "0 9 1 * *"
+schedule_interval = "0 10 * * *"
 # Slack msg
 riskiness = "Medium"  # High, Medium or Low
-utility = "Legacy etl related to Monthly Content Active Ads"
+utility = "Legacy etl related to Daily Content Active Ads"
 
 SLACK_CONN_ID = "slack"
 sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
@@ -69,10 +69,10 @@ with models.DAG(
     on_failure_callback=task_fail_slack_alert,
 ) as dag:
 
-    run_active_ads = SSHOperator(
-        task_id="task_run_active_ads",
+    run_daily_active_ads = SSHOperator(
+        task_id="task_run_daily_active_ads",
         ssh_hook=sshHook,
-        command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/active_ads/run_etl_active_ads.sh ",  # You need add a space at the end of the command, to avoid error: Jinja template not found
+        command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/Blocket/run_etl_active_ads.sh ",  # You need add a space at the end of the command, to avoid error: Jinja template not found
     )
 
-    run_active_ads
+    run_daily_active_ads
