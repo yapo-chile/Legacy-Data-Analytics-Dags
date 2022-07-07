@@ -25,10 +25,10 @@ dag_tags = [
     "legacy",
 ]
 # Schedule interal
-schedule_interval = "0 9 * * *"  # This example scheduled at daily 6 AM: "0 6 * * *"
+schedule_interval = "0 9 1 * *"
 # Slack msg
 riskiness = "Medium"  # High, Medium or Low
-utility = "Legacy etl related to Content Active Ads"  # Example: "This etl generates ... data in DWH."
+utility = "Legacy etl related to Monthly Content Active Ads"
 
 SLACK_CONN_ID = "slack"
 sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
