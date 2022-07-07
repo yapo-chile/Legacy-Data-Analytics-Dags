@@ -25,7 +25,7 @@ dag_tags = [
     "legacy",
 ]
 # Schedule interal
-schedule_interval = "0 9 1 * *"
+schedule_interval = "0 10 * * *"
 # Slack msg
 riskiness = "Medium"  # High, Medium or Low
 utility = "Legacy etl related to Daily Content Active Ads"
