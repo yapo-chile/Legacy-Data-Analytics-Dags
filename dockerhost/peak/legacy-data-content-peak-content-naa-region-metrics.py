@@ -30,7 +30,7 @@ dag_tags = [
 # Docker image
 docker_image = "gcr.io/data-poc-323413/legacy/peak-content-naa-region-metrics:latest"
 # Schedule interal
-schedule_interval = "0 9 * * *"
+schedule_interval = "0 13 * * *"
 # Slack msg
 riskiness = "Medium"
 utility = "This ETL process New Approved ads (NAA) data."

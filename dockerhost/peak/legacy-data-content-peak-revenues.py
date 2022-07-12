@@ -30,7 +30,7 @@ dag_tags = [
 # Docker image
 docker_image = "gcr.io/data-poc-323413/legacy/data-content-peak-revenues:latest"
 # Schedule interal
-schedule_interval = "5 9 * * *"
+schedule_interval = "0 13 * * *"
 # Slack msg
 riskiness = "High"
 utility = "This ETL processes revenues data."
