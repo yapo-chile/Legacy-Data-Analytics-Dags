@@ -34,7 +34,7 @@ schedule_interval = None
 # Slack msg
 riskiness = "Medium"
 utility = "Retrieves stored purchases from blocketDb and store them in dwh"
-sshHook = SSHHook(ssh_conn_id="ssh_public_aws")
+sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
 connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
 SLACK_CONN_ID = "slack"
 

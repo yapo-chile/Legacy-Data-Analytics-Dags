@@ -3,16 +3,16 @@ from __future__ import print_function
 import logging
 from datetime import datetime
 
-# Common methods
-from lib.slack_msg import slack_msg_body
+from airflow import models
+from airflow.contrib.hooks.ssh_hook import SSHHook
+from airflow.contrib.operators import ssh_operator
+from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
+from airflow.models.variable import Variable
+from airflow.operators import python_operator
 from lib.get_dates import get_date
 
-from airflow import models
-from airflow.contrib.operators import ssh_operator
-from airflow.operators import python_operator
-from airflow.contrib.hooks.ssh_hook import SSHHook
-from airflow.models.variable import Variable
-from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
+# Common methods
+from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
@@ -27,7 +27,8 @@ dag_tags = [
     "input: dwh",
     "input: zendesk",
     "input: surveypal API",
-    "output: dwh"]
+    "output: dwh",
+]
 # Docker image
 docker_image = "registry.gitlab.com/yapo_team/legacy/data-analytics/data-content:71ae4cac_peak-content-sac"
 # Schedule interal
@@ -36,19 +37,19 @@ schedule_interval = "0 * * * *"
 riskiness = "Medium"
 utility = "This pipeline makes available data associated with customer service performed by the SAC team."
 # Other information:
-"""From this data you can obtain information associated with reasons for requesting attention, date of opening and 
-resolution of the attention case, attention channel, results of satisfaction surveys, among other data more associated 
-with the requesting client. This data is obtained through the interaction with various endpoints available on the 
+"""From this data you can obtain information associated with reasons for requesting attention, date of opening and
+resolution of the attention case, attention channel, results of satisfaction surveys, among other data more associated
+with the requesting client. This data is obtained through the interaction with various endpoints available on the
 Zendesk and Surveypal platforms and is recorded in our datawarehouse after being transformed into this pipeline
 
-Finally, it is important to mention that regarding the execution and re-execution strategy, 
-it is not necessary in this case to pass variables "from" "to" (dates vars) because these are obtained 
-by consulting the last data recorded in the output data tables at the DWH. That said, 
-to re-execute a time range and obtain this data again, it is necessary to delete this range in the aforementioned 
+Finally, it is important to mention that regarding the execution and re-execution strategy,
+it is not necessary in this case to pass variables "from" "to" (dates vars) because these are obtained
+by consulting the last data recorded in the output data tables at the DWH. That said,
+to re-execute a time range and obtain this data again, it is necessary to delete this range in the aforementioned
 output tables and this pipeline will automatically obtain the data for the time range in question, up to the current day.
 """
 
-sshHook = SSHHook(ssh_conn_id="ssh_public_aws")
+sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
 connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
 SLACK_CONN_ID = "slack"
 
@@ -79,12 +80,12 @@ def task_fail_slack_alert(context):
 
 
 with models.DAG(
-        dag_name,
-        tags=dag_tags,
-        schedule_interval=schedule_interval,
-        default_args=default_args,
-        max_active_runs=1,
-        on_failure_callback=task_fail_slack_alert
+    dag_name,
+    tags=dag_tags,
+    schedule_interval=schedule_interval,
+    default_args=default_args,
+    max_active_runs=1,
+    on_failure_callback=task_fail_slack_alert,
 ) as dag:
 
     def call_ssh(**kwargs):
@@ -102,15 +103,14 @@ with models.DAG(
             ssh_hook=sshHook,
             command=f"""{connect_dockerhost} <<EOF \n
                         sudo docker pull {docker_image} \n
-                        sudo docker run {command_line}"""
+                        sudo docker run {command_line}""",
         )
         call.execute(context=kwargs)
-
 
     run_peak_content_sac = python_operator.PythonOperator(
         task_id="task_run_peak_content_sac",
         provide_context=True,
-        python_callable=call_ssh
+        python_callable=call_ssh,
     )
 
     run_peak_content_sac
