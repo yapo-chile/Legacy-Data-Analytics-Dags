@@ -30,7 +30,7 @@ dag_tags = [
 # Docker image
 docker_image = "registry.gitlab.com/yapo_team/legacy/data-analytics/data-content:72ca5b6b_ad-params"
 # Schedule interal
-schedule_interval = "15 0 * * *"
+schedule_interval = "10 4 * * *"
 # Slack msg
 riskiness = "High"
 utility = "Ads Params Etl processes params from verticals as it would be cars, inmo and big sellers, " \

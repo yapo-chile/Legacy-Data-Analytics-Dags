@@ -28,7 +28,7 @@ dag_tags = [
 # Docker image
 docker_image = "gcr.io/data-poc-323413/legacy/tableau-kpi-fraude:1.2"
 # Schedule interal
-schedule_interval = "0 9 * * *"
+schedule_interval = "0 13 * * *"
 # Slack msg
 riskiness = "Medium"
 utility = "This ETL generates Frauds data to be used in tableau online"
