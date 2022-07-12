@@ -34,7 +34,7 @@ schedule_interval = None
 # Slack msg
 riskiness = "Medium"
 utility = "Ads created daily pipeline that aims to obtain from blocket db the ads created on the day of the process, in addition to calculating the dates of approval and elimination / rejection of ads on the same process date"
-sshHook = SSHHook(ssh_conn_id="ssh_public_aws")
+sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
 connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
 SLACK_CONN_ID = "slack"
 

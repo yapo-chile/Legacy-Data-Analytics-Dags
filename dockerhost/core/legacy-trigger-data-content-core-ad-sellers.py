@@ -35,7 +35,7 @@ schedule_interval = None
 riskiness = "Medium"
 utility = "Daily this pipeline makes available into DWH the data related to sellers of ours ads whatever its classification private or professional as well as a detail available related to sellers pro in order to know in which categories a seller is professional"
 
-sshHook = SSHHook(ssh_conn_id="ssh_public_aws")
+sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
 connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
 SLACK_CONN_ID = "slack"
 

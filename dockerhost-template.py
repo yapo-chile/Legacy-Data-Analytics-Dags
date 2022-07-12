@@ -3,30 +3,40 @@ from __future__ import print_function
 import logging
 from datetime import datetime
 
-# Common methods
-from lib.slack_msg import slack_msg_body
+from airflow import models
+from airflow.contrib.hooks.ssh_hook import SSHHook
+from airflow.contrib.operators import ssh_operator
+from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
+from airflow.models.variable import Variable
+from airflow.operators import python_operator
 from lib.get_dates import get_date
 
-from airflow import models
-from airflow.contrib.operators import ssh_operator
-from airflow.operators import python_operator
-from airflow.contrib.hooks.ssh_hook import SSHHook
-from airflow.models.variable import Variable
-from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
+# Common methods
+from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
 dag_name = "<DAG_NAME>"
-dag_tags = ["testing", "ETL", "schedule", "dockerhost", "git: legacy/data-content", "input: dwh", "output: dwh"]
+dag_tags = [
+    "testing",
+    "ETL",
+    "schedule",
+    "dockerhost",
+    "git: legacy/data-content",
+    "input: dwh",
+    "output: dwh",
+]
 # Docker image
 docker_image = "<DOCKER_IMAGE>"
 # Schedule interal
-schedule_interval = "<SCHEDULE_INTERVAL>"  # This example scheduled at daily 6 AM: "0 6 * * *"
+schedule_interval = (
+    "<SCHEDULE_INTERVAL>"  # This example scheduled at daily 6 AM: "0 6 * * *"
+)
 # Slack msg
 riskiness = "<RISKINESS>"  # High, Medium or Low
 utility = "<UTILITY_OF_DAG>"  # Example: "This etl generates ... data in DWH."
 
-sshHook = SSHHook(ssh_conn_id="ssh_public_aws")
+sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
 connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
 SLACK_CONN_ID = "slack"
 
@@ -57,12 +67,12 @@ def task_fail_slack_alert(context):
 
 
 with models.DAG(
-        dag_name,
-        tags=dag_tags,
-        schedule_interval=schedule_interval,
-        default_args=default_args,
-        max_active_runs=1,
-        on_failure_callback=task_fail_slack_alert
+    dag_name,
+    tags=dag_tags,
+    schedule_interval=schedule_interval,
+    default_args=default_args,
+    max_active_runs=1,
+    on_failure_callback=task_fail_slack_alert,
 ) as dag:
 
     def call_ssh(**kwargs):
@@ -80,15 +90,12 @@ with models.DAG(
             ssh_hook=sshHook,
             command=f"""{connect_dockerhost} <<EOF \n
                         sudo docker pull {docker_image} \n
-                        sudo docker run {command_line}"""
+                        sudo docker run {command_line}""",
         )
         call.execute(context=kwargs)
 
-
     run_ssh = python_operator.PythonOperator(
-        task_id="example_task_id",
-        provide_context=True,
-        python_callable=call_ssh
+        task_id="example_task_id", provide_context=True, python_callable=call_ssh
     )
 
     run_ssh
