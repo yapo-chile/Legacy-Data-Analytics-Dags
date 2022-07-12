@@ -37,7 +37,7 @@ utility = "Ads by user Etl processes params from verticals as it would be cars, 
           "then store them in datawarehouse as appended method so a historical data would be always " \
           "available."
 
-sshHook = SSHHook(ssh_conn_id="ssh_public_aws")
+sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
 connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
 SLACK_CONN_ID = "slack"
 
