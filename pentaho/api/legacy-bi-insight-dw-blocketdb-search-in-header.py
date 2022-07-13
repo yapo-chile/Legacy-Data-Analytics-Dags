@@ -1,11 +1,11 @@
-from __future__ import print_function
-
+import logging
 from datetime import datetime
 
 from airflow import models
 from airflow.contrib.hooks.ssh_hook import SSHHook
 from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
 from airflow.contrib.operators.ssh_operator import SSHOperator
+from airflow.operators import python_operator
 from lib.get_dates import get_date
 
 # Common methods
@@ -59,6 +59,12 @@ def task_fail_slack_alert(context):
     return failed_alert.execute(context=context)
 
 
+def set_dates(**kwargs):
+    dates = get_date(**kwargs)
+    kwargs["ti"].xcom_push(key="processing_date", value=dates["start_date"])
+    logging.info(f"processing date: {dates['start_date']}")
+
+
 with models.DAG(
     dag_name,
     tags=dag_tags,
@@ -68,11 +74,16 @@ with models.DAG(
     catchup=False,
     on_failure_callback=task_fail_slack_alert,
 ) as dag:
-
+    set_dates_search_header = python_operator.PythonOperator(
+        task_id="task_set_dates_search_header",
+        provide_context=True,
+        python_callable=set_dates,
+    )
     run_search_header = SSHOperator(
         task_id="task_run_search_header",
+        do_xcom_push=False,
         ssh_hook=sshHook,
-        command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/etl_xiti/etl_search_in_header/run_jb_search_in_header.sh ",  # You need add a space at the end of the command, to avoid error: Jinja template not found
+        command='sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/etl_xiti/etl_search_in_header/run_jb_search_in_header.sh -d1="{{ ti.xcom_pull(task_ids="task_set_dates_search_header", key="processing_date") }}" ',  # You need add a space at the end of the command, to avoid error: Jinja template not found
     )
 
-    run_search_header
+    set_dates_search_header >> run_search_header
