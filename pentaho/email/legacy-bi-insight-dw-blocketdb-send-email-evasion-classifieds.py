@@ -12,7 +12,7 @@ from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
-dag_name = "legacy_bi-insight-dw-blocketdb_sales_and_revenues_aggregation"
+dag_name = "legacy_bi-insight-dw-blocketdb_send_email_evasion_classifieds"
 dag_tags = [
     "production",
     "ETL",
@@ -24,10 +24,10 @@ dag_tags = [
     "legacy",
 ]
 # Schedule interal
-schedule_interval = "30 9 * * *"
+schedule_interval = "30 10 * * *"
 # Slack msg
 riskiness = "Medium"  # High, Medium or Low
-utility = "Legacy etl related to Sales And Revenues Aggregation"
+utility = "Legacy etl related to Send Email Evasion Classifieds"
 
 SLACK_CONN_ID = "slack"
 sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
@@ -68,10 +68,10 @@ with models.DAG(
     on_failure_callback=task_fail_slack_alert,
 ) as dag:
 
-    run_sales_and_revenues_aggregation = SSHOperator(
-        task_id="task_run_sales_and_revenues_aggregation",
+    run_send_email_evasion_classifieds = SSHOperator(
+        task_id="task_run_send_email_evasion_classifieds",
         ssh_hook=sshHook,
-        command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/finance/run_etl_sales_revenues.sh ",  # You need add a space at the end of the command, to avoid error: Jinja template not found
+        command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/send_email_evasion_clasificados/run_send_email_evasion_clasificados.sh ",  # You need add a space at the end of the command, to avoid error: Jinja template not found
     )
 
-    run_sales_and_revenues_aggregation
+    run_send_email_evasion_classifieds
