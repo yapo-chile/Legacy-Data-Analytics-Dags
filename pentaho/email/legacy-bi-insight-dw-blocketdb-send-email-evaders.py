@@ -12,7 +12,7 @@ from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
-dag_name = "legacy_bi-insight-dw-blocketdb_send-email-evaders"
+dag_name = "legacy_bi-insight-dw-blocketdb_send_email_evaders"
 dag_tags = [
     "production",
     "ETL",
