@@ -16,21 +16,24 @@ from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
-dag_name = "legacy_docker_container_rm"
+dag_name = "legacy_data-content_peak-content_ads_by_user"
 dag_tags = [
     "production",
     "ETL",
     "schedule",
     "dockerhost",
     "legacy",
+    "git: legacy/data-content",
     "input: dwh",
     "output: dwh",
 ]
+# Docker image
+docker_image = "bi.etl.ads.by.user.pentaho:1.0"
 # Schedule interal
-schedule_interval = "0 2 1 * *"
+schedule_interval = "0 10 * * *"
 # Slack msg
-riskiness = "High"
-utility = "This is a process to maintenance docker containers"
+riskiness = "Medium"
+utility = "ETL process related to ads by user"
 
 
 sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
@@ -39,6 +42,10 @@ SLACK_CONN_ID = "slack"
 
 
 default_args = {
+    # The start_date describes when a DAG is valid / can be run. Set this to a
+    # fixed point in time rather than dynamically, since it is evaluated every
+    # time a DAG is parsed. See:
+    # https://airflow.apache.org/faq.html#what-s-the-deal-with-start-date
     "start_date": datetime(2022, 7, 15),
 }
 
@@ -71,18 +78,21 @@ with models.DAG(
     def call_ssh(**kwargs):
         dates = get_date(**kwargs)
         logging.info(f"detected days: {dates}")
+        command_line = (
+            f"""{docker_image} -d1={dates['start_date']} -d2={dates['end_date']}"""
+        )
         call = ssh_operator.SSHOperator(
-            task_id="task_docker_container_rm",
+            task_id="task_ads_by_user",
             ssh_hook=sshHook,
             command=f"""{connect_dockerhost} <<EOF \n
-                        bash /home/bnbiuser/Docker/docker_clean.sh""",
+                        sudo docker run {command_line}""",
         )
         call.execute(context=kwargs)
 
-    docker_container_rm = python_operator.PythonOperator(
-        task_id="task_docker_container_rm",
+    ads_by_user = python_operator.PythonOperator(
+        task_id="task_ads_by_user",
         provide_context=True,
         python_callable=call_ssh,
     )
 
-    docker_container_rm
+    ads_by_user
