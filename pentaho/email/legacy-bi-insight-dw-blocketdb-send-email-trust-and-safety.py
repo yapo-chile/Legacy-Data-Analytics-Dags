@@ -13,7 +13,7 @@ from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
-dag_name = "legacy_trigger_bi-insight-dw-blocketdb_send_email_scar_face"
+dag_name = "legacy_bi-insight-dw-blocketdb_send_email_trust_and_safety"
 dag_tags = [
     "production",
     "ETL",
@@ -25,10 +25,10 @@ dag_tags = [
     "legacy",
 ]
 # Schedule interal
-schedule_interval = "0 8 * * *"
+schedule_interval = "30 10 * * *"
 # Slack msg
 riskiness = "Medium"  # High, Medium or Low
-utility = "Legacy etl related to Sent email Scar Face"
+utility = "Legacy etl related to Sent email trust and safety"
 
 SLACK_CONN_ID = "slack"
 sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
@@ -59,6 +59,14 @@ def task_fail_slack_alert(context):
     return failed_alert.execute(context=context)
 
 
+def set_dates(**kwargs):
+    dates = get_date(**kwargs)
+    kwargs["ti"].xcom_push(key="start_date", value=dates["start_date"])
+    kwargs["ti"].xcom_push(key="end_date", value=dates["end_date"])
+    logging.info(f"start date to execute process: {dates['start_date']}")
+    logging.info(f"end date to execute process: {dates['end_date']}")
+
+
 with models.DAG(
     dag_name,
     tags=dag_tags,
@@ -68,11 +76,16 @@ with models.DAG(
     catchup=False,
     on_failure_callback=task_fail_slack_alert,
 ) as dag:
-    send_email_scar_face = SSHOperator(
-        task_id="task_send_email_scar_face",
+    email_trust_and_safety = python_operator.PythonOperator(
+        task_id="task_set_email_trust_and_safety",
+        provide_context=True,
+        python_callable=set_dates,
+    )
+    send_email_trust_and_safety = SSHOperator(
+        task_id="task_send_email_trust_and_safety",
         do_xcom_push=False,
         ssh_hook=sshHook,
-        command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/send_email_scar_face/run_send_scar_face.sh ",  # You need add a space at the end of the command, to avoid error: Jinja template not found
+        command='sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/send_email_trust_n_safety/run_send_trust_n_safety.sh -d1="{{ ti.xcom_pull(task_ids="task_set_email_trust_and_safety", key="start_date") }}" -d2="{{ ti.xcom_pull(task_ids="task_set_email_trust_and_safety", key="end_date") }}" ',  # You need add a space at the end of the command, to avoid error: Jinja template not found
     )
 
-    send_email_scar_face
+    email_trust_and_safety >> send_email_trust_and_safety
