@@ -86,7 +86,7 @@ with models.DAG(
             task_id="task_send_email_besedo",
             ssh_hook=sshHook,
             command=f"""{connect_dockerhost} <<EOF \n
-                        sudo docker pull {docker_image} \n
+                        docker pull {docker_image} \n
                         sudo docker run {command_line}""",
         )
         call.execute(context=kwargs)
