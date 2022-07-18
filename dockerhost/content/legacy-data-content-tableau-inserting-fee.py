@@ -13,7 +13,7 @@ from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
-dag_name = "legacy_data-content_retention_seller_pack"
+dag_name = "legacy_data-content_tableau_inserting_fee"
 dag_tags = [
     "production",
     "ETL",
@@ -25,12 +25,12 @@ dag_tags = [
     "output: pending",
 ]
 # Docker image
-docker_image = "gcr.io/data-poc-323413/legacy/retention-seller-pack:latest"
+docker_image = "gcr.io/data-poc-323413/legacy/tableau-inserting-fee:latest"
 # Schedule interal
-schedule_interval = None
+schedule_interval = "0 13 * * *"
 # Slack msg
 riskiness = "Medium"
-utility = "ETL related to retention sellers pack"
+utility = "ETL related tableay inserting fee"
 
 sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
 connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
@@ -73,11 +73,11 @@ with models.DAG(
 ) as dag:
 
     def call_ssh(**kwargs):
-        command_line = f"""--net=host --rm -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
+        command_line = f"""--rm -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
                             -e APP_DB_SECRET=/app/db-secret \
                             {docker_image}"""
         call = ssh_operator.SSHOperator(
-            task_id="task_retention_sellers_packs",
+            task_id="task_tableau_inserting_fee",
             ssh_hook=sshHook,
             command=f"""{connect_dockerhost} <<EOF \n
                         docker pull {docker_image} \n
@@ -85,10 +85,10 @@ with models.DAG(
         )
         call.execute(context=kwargs)
 
-    task_retention_sellers_packs = python_operator.PythonOperator(
-        task_id="task_retention_sellers_packs",
+    tableau_inserting_fee = python_operator.PythonOperator(
+        task_id="task_tableau_inserting_fee",
         provide_context=True,
         python_callable=call_ssh,
     )
 
-    task_retention_sellers_packs
+    tableau_inserting_fee
