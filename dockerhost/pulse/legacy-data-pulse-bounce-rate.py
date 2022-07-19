@@ -24,7 +24,8 @@ dag_tags = [
     "dockerhost",
     "legacy",
     "git: legacy/data-pulse",
-    "input: pending" "output: pending",
+    "input: pending",
+    "output: pending",
 ]
 # Docker image
 docker_image = "containers.mpi-internal.com/yapo/data-pulse-bounce-rate:latest"
