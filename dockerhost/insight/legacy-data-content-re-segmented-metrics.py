@@ -43,7 +43,7 @@ default_args = {
     # fixed point in time rather than dynamically, since it is evaluated every
     # time a DAG is parsed. See:
     # https://airflow.apache.org/faq.html#what-s-the-deal-with-start-date
-    "start_date": datetime(2022, 7, 18),
+    "start_date": datetime(2022, 7, 19),
 }
 
 
@@ -79,8 +79,8 @@ with models.DAG(
                             -e APP_PULSE_SECRET=/app/pulse-secret \
                             -e APP_DB_SECRET=/app/db-secret \
                             {docker_image} \
-                            -email_from="noreply@yapo.cl" \
-                            -email_to="data_team@adevinta.com"""
+                            -email_from='noreply@yapo.cl' \
+                            -email_to='data_team@adevinta.com'"""
         call = ssh_operator.SSHOperator(
             task_id="task_re_segmented_metrics",
             ssh_hook=sshHook,

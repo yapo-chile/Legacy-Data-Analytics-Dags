@@ -44,7 +44,7 @@ default_args = {
     # fixed point in time rather than dynamically, since it is evaluated every
     # time a DAG is parsed. See:
     # https://airflow.apache.org/faq.html#what-s-the-deal-with-start-date
-    "start_date": datetime(2022, 7, 18),
+    "start_date": datetime(2022, 7, 19),
 }
 
 
@@ -77,11 +77,9 @@ with models.DAG(
         dates = get_date(**kwargs)
         logging.info(f"detected days: {dates}")
         command_line = f"""--net=host --rm -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
-                            -e APP_DB_SECRET=/app/db-secret \
-                            {docker_image} \
-                            -email_from="noreply@yapo.cl \
-                            -date_from={dates['start_date']} \
-                            -date_to={dates['end_date']}"""
+                        -e APP_DB_SECRET=/app/db-secret \
+                        {docker_image} \
+                        -email_from='noreply@yapo.cl'"""
         call = ssh_operator.SSHOperator(
             task_id="task_send_email_besedo",
             ssh_hook=sshHook,
