@@ -28,7 +28,7 @@ dag_tags = [
     "output: dwh",
 ]
 # Docker image
-docker_image = "run bi.shopping_cart:1.0"
+docker_image = "bi.shopping_cart:1.0"
 # Schedule interal
 schedule_interval = "0 11 * * *"
 # Slack msg
