@@ -3,16 +3,16 @@ from __future__ import print_function
 import logging
 from datetime import datetime
 
-# Common methods
-from lib.slack_msg import slack_msg_body
+from airflow import models
+from airflow.contrib.hooks.ssh_hook import SSHHook
+from airflow.contrib.operators import ssh_operator
+from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
+from airflow.models.variable import Variable
+from airflow.operators import python_operator
 from lib.get_dates import get_date
 
-from airflow import models
-from airflow.contrib.operators import ssh_operator
-from airflow.operators import python_operator
-from airflow.contrib.hooks.ssh_hook import SSHHook
-from airflow.models.variable import Variable
-from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
+# Common methods
+from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
@@ -25,17 +25,20 @@ dag_tags = [
     "legacy",
     "git: legacy/data-content",
     "input: dwh",
-    "input: blocket"
-    "output: dwh"]
+    "input: blocket",
+    "output: dwh",
+]
 # Docker image
 docker_image = "registry.gitlab.com/yapo_team/legacy/data-analytics/data-content:72ca5b6b_ad-params"
 # Schedule interal
 schedule_interval = "10 4 * * *"
 # Slack msg
 riskiness = "High"
-utility = "Ads Params Etl processes params from verticals as it would be cars, inmo and big sellers, " \
-          "then store them in DWH as appended method so a historical data would be always " \
-          "available."
+utility = (
+    "Ads Params Etl processes params from verticals as it would be cars, inmo and big sellers, "
+    "then store them in DWH as appended method so a historical data would be always "
+    "available."
+)
 
 sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
 connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
@@ -68,12 +71,12 @@ def task_fail_slack_alert(context):
 
 
 with models.DAG(
-        dag_name,
-        tags=dag_tags,
-        schedule_interval=schedule_interval,
-        default_args=default_args,
-        max_active_runs=1,
-        on_failure_callback=task_fail_slack_alert
+    dag_name,
+    tags=dag_tags,
+    schedule_interval=schedule_interval,
+    default_args=default_args,
+    max_active_runs=1,
+    on_failure_callback=task_fail_slack_alert,
 ) as dag:
 
     def call_ssh(**kwargs):
@@ -91,15 +94,14 @@ with models.DAG(
             ssh_hook=sshHook,
             command=f"""{connect_dockerhost} <<EOF \n
                         sudo docker pull {docker_image} \n
-                        sudo docker run {command_line}"""
+                        sudo docker run {command_line}""",
         )
         call.execute(context=kwargs)
-
 
     run_content_ad_params = python_operator.PythonOperator(
         task_id="task_run_content_ad_params",
         provide_context=True,
-        python_callable=call_ssh
+        python_callable=call_ssh,
     )
 
     run_content_ad_params

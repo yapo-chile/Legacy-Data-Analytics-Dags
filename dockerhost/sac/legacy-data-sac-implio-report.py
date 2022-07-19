@@ -24,7 +24,8 @@ dag_tags = [
     "dockerhost",
     "legacy",
     "git: legacy/data-sac",
-    "input: pending" "output: pending",
+    "input: pending",
+    "output: pending",
 ]
 # Docker image
 docker_image = "gcr.io/data-poc-323413/legacy/implio_report:latest"
