@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import logging
 from datetime import datetime
 
@@ -7,34 +9,33 @@ from airflow.contrib.operators import ssh_operator
 from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
 from airflow.models.variable import Variable
 from airflow.operators import python_operator
+from lib.get_dates import get_date
 
 # Common methods
 from lib.slack_msg import slack_msg_body
 
 # DEFINE INIT PARAMS
 # Dag
-dag_name = "legacy_data-content_re_segmented_metrics"
+dag_name = "legacy_data-pulse_bounce-rate"
 dag_tags = [
     "production",
     "ETL",
     "schedule",
     "dockerhost",
     "legacy",
-    "git: legacy/data-content",
-    "input: pending",
-    "output: pending",
+    "git: legacy/data-pulse",
+    "input: pending" "output: pending",
 ]
 # Docker image
-docker_image = "gcr.io/data-poc-323413/legacy/re_segmented_metrics:latest"
+docker_image = "containers.mpi-internal.com/yapo/data-pulse-bounce-rate:latest"
 # Schedule interal
-schedule_interval = "40 12 * * *"
+schedule_interval = "30 11 * * *"
 # Slack msg
 riskiness = "Medium"
-utility = "ETL related insight re-segmented metrics"
+utility = "ETL related to bounce rate"
 
 sshHook = SSHHook(ssh_conn_id="ssh_public_pentaho")
 connect_dockerhost = Variable.get("CONNECT_DOCKERHOST")
-
 SLACK_CONN_ID = "slack"
 
 
@@ -73,27 +74,26 @@ with models.DAG(
 ) as dag:
 
     def call_ssh(**kwargs):
-        command_line = f"""--rm --net=host \
-                            -v /home/bnbiuser/secrets/pulse_auth:/app/pulse-secret \
-                            -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
-                            -e APP_PULSE_SECRET=/app/pulse-secret \
-                            -e APP_DB_SECRET=/app/db-secret \
-                            {docker_image} \
-                            -email_from='noreply@yapo.cl' \
-                            -email_to='data_team@adevinta.com'"""
+        dates = get_date(**kwargs)
+        logging.info(f"detected days: {dates}")
+        command_line = f"""-v /home/bnbiuser/secrets/pulse_auth:/app/pulse-secret \
+                -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
+                -e APP_PULSE_SECRET=/app/pulse-secret \
+                -e APP_DB_SECRET=/app/db-secret \
+                {docker_image} \
+                -date_from={dates['start_date']} \
+                -date_to={dates['end_date']}"""
         call = ssh_operator.SSHOperator(
-            task_id="task_re_segmented_metrics",
+            task_id="task_bounce_rate",
             ssh_hook=sshHook,
             command=f"""{connect_dockerhost} <<EOF \n
-                        docker pull {docker_image} \n
+                        sudo docker pull {docker_image} \n
                         sudo docker run {command_line}""",
         )
         call.execute(context=kwargs)
 
-    re_segmented_metrics = python_operator.PythonOperator(
-        task_id="task_re_segmented_metrics",
-        provide_context=True,
-        python_callable=call_ssh,
+    bounce_rate = python_operator.PythonOperator(
+        task_id="task_bounce_rate", provide_context=True, python_callable=call_ssh
     )
 
-    re_segmented_metrics
+    bounce_rate
