@@ -28,7 +28,7 @@ dag_tags = [
 # Docker image
 docker_image = "gcr.io/data-poc-323413/legacy/data-user-behavior-scrapper-cha:latest"
 # Schedule interal
-schedule_interval = "0 13 * * *"
+schedule_interval = "0 12 * * 5"
 # Slack msg
 riskiness = "High"
 utility = "This ETL is related to scrapping chileautos dealers"
