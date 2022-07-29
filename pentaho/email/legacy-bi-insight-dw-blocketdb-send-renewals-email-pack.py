@@ -38,7 +38,7 @@ default_args = {
     # fixed point in time rather than dynamically, since it is evaluated every
     # time a DAG is parsed. See:
     # https://airflow.apache.org/faq.html#what-s-the-deal-with-start-date
-    "start_date": datetime(2022, 7, 15),
+    "start_date": datetime(2022, 7, 5),
 }
 
 

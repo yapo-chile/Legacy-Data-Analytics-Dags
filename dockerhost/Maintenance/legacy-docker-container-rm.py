@@ -39,7 +39,7 @@ SLACK_CONN_ID = "slack"
 
 
 default_args = {
-    "start_date": datetime(2022, 7, 15),
+    "start_date": datetime(2022, 7, 1),
 }
 
 
