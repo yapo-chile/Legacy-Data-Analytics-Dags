@@ -28,7 +28,7 @@ dag_tags = [
 # Docker image
 docker_image = "gcr.io/yapo-dat-prd/py-scp-scrapy-portal-inmo:latest"
 # Schedule interal
-schedule_interval = None
+schedule_interval = "0 10 1,16 * *"
 # Slack msg
 riskiness = "High"
 utility = "This ETL is related to scrapping portal inmobiliario"
@@ -42,7 +42,7 @@ default_args = {
     # fixed point in time rather than dynamically, since it is evaluated every
     # time a DAG is parsed. See:
     # https://airflow.apache.org/faq.html#what-s-the-deal-with-start-date
-    "start_date": datetime(2022, 7, 20),
+    "start_date": datetime(2022, 7, 16),
 }
 
 
@@ -68,6 +68,7 @@ with models.DAG(
     schedule_interval=schedule_interval,
     default_args=default_args,
     max_active_runs=1,
+    catchup=False,
     on_failure_callback=task_fail_slack_alert,
 ) as dag:
 
