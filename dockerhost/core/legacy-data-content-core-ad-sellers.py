@@ -118,12 +118,12 @@ with models.DAG(
             "end_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="end_date")}}',
         },
     )
-    # trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico = TriggerDagRunOperator(
-    #    task_id="task_trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico",
-    #    wait_for_completion=True,
-    #    trigger_dag_id="legacy_trigger_bi-insight-dw-blocketdb_etl_incremental_automatico",
-    #    do_xcom_push=False,
-    # )
+    trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico = TriggerDagRunOperator(
+        task_id="task_trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico",
+        wait_for_completion=True,
+        trigger_dag_id="legacy_trigger_bi-insight-dw-blocketdb_etl_incremental_automatico",
+        do_xcom_push=False,
+    )
 
     (
         set_dates_process
@@ -131,5 +131,5 @@ with models.DAG(
         >> trigger_dag_legacy_trigger_data_content_ads_created_daily
         >> trigger_dag_legacy_trigger_data_revenues_incremental_product_order
         >> trigger_dag_legacy_trigger_data_revenues_store_purshases
-        # >> trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico
+        >> trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico
     )
