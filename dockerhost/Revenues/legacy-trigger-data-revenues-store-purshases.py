@@ -64,6 +64,13 @@ def task_fail_slack_alert(context):
     return failed_alert.execute(context=context)
 
 
+def set_dates(**kwargs):
+    dates = get_date(**kwargs)
+    kwargs["ti"].xcom_push(key="start_date", value=dates["start_date"])
+    kwargs["ti"].xcom_push(key="end_date", value=dates["end_date"])
+    logging.info(f"detected days: {dates}")
+
+
 with models.DAG(
     dag_name,
     tags=dag_tags,
@@ -74,13 +81,14 @@ with models.DAG(
 ) as dag:
 
     def call_ssh(**kwargs):
-        dates = get_date(**kwargs)
-        logging.info(f"detected days: {dates}")
+        ti = kwargs["ti"]
         command_line = f"""--rm -v /home/bnbiuser/secrets/blocket_db:/app/db-blocket \
                             -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
                             -e APP_BLOCKET_SECRET=/app/db-blocket \
                             -e APP_DB_SECRET=/app/db-secret \
-                            {docker_image}"""
+                            {docker_image} \
+                            -date_from={ ti.xcom_pull(task_ids="task_set_dates_revenues_store_purshases", key="start_date") } \
+                            -date_to={ ti.xcom_pull(task_ids="task_set_dates_revenues_store_purshases", key="end_date") }"""
         call = ssh_operator.SSHOperator(
             task_id="taskrun_store-purshases",
             ssh_hook=sshHook,
@@ -90,10 +98,16 @@ with models.DAG(
         )
         call.execute(context=kwargs)
 
+    set_dates_revenues_store_purshases = python_operator.PythonOperator(
+        task_id="task_set_dates_revenues_store_purshases",
+        provide_context=True,
+        python_callable=set_dates,
+    )
+
     run_store_purshases = python_operator.PythonOperator(
         task_id="task_run_store-purshases",
         provide_context=True,
         python_callable=call_ssh,
     )
 
-    run_store_purshases
+    set_dates_revenues_store_purshases >> run_store_purshases

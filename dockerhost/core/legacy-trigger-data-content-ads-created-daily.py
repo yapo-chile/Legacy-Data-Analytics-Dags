@@ -64,6 +64,13 @@ def task_fail_slack_alert(context):
     return failed_alert.execute(context=context)
 
 
+def set_dates(**kwargs):
+    dates = get_date(**kwargs)
+    kwargs["ti"].xcom_push(key="start_date", value=dates["start_date"])
+    kwargs["ti"].xcom_push(key="end_date", value=dates["end_date"])
+    logging.info(f"detected days: {dates}")
+
+
 with models.DAG(
     dag_name,
     tags=dag_tags,
@@ -74,13 +81,14 @@ with models.DAG(
 ) as dag:
 
     def call_ssh(**kwargs):
-        dates = get_date(**kwargs)
-        logging.info(f"detected days: {dates}")
+        ti = kwargs["ti"]
         command_line = f"""--rm -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
                             -v /home/bnbiuser/secrets/blocket_db:/app/blocket-secret \
                             -e APP_DB_SECRET=/app/blocket-secret \
                             -e APP_DW_SECRET=/app/db-secret \
-                            {docker_image}"""
+                            {docker_image} \
+                            -date_from={ ti.xcom_pull(task_ids="task_set_dates_ads_created_daily", key="start_date") } \
+                            -date_to={ ti.xcom_pull(task_ids="task_set_dates_ads_created_daily", key="end_date") }"""
         call = ssh_operator.SSHOperator(
             task_id="task_run_ads_created_daily",
             ssh_hook=sshHook,
@@ -90,10 +98,16 @@ with models.DAG(
         )
         call.execute(context=kwargs)
 
+    set_dates_ads_created_daily = python_operator.PythonOperator(
+        task_id="task_set_dates_ads_created_daily",
+        provide_context=True,
+        python_callable=set_dates,
+    )
+
     run_ads_created_daily = python_operator.PythonOperator(
         task_id="task_run_ads_created_daily",
         provide_context=True,
         python_callable=call_ssh,
     )
 
-    run_ads_created_daily
+    set_dates_ads_created_daily >> run_ads_created_daily

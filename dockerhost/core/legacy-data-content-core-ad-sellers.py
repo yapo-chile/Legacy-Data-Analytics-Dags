@@ -6,6 +6,7 @@ from datetime import datetime
 from airflow import models
 from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
 from airflow.models.variable import Variable
+from airflow.operators import python_operator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from lib.get_dates import get_date
 
@@ -59,6 +60,12 @@ def task_fail_slack_alert(context):
     return failed_alert.execute(context=context)
 
 
+def set_dates(**kwargs):
+    dates = get_date(**kwargs)
+    kwargs["ti"].xcom_push(key="start_date", value=dates["start_date"])
+    kwargs["ti"].xcom_push(key="end_date", value=dates["end_date"])
+
+
 with models.DAG(
     dag_name,
     tags=dag_tags,
@@ -68,41 +75,61 @@ with models.DAG(
     on_failure_callback=task_fail_slack_alert,
 ) as dag:
 
+    set_dates_process = python_operator.PythonOperator(
+        task_id="task_set_dates_ad_sellers",
+        provide_context=True,
+        python_callable=set_dates,
+    )
+
     trigger_dag_legacy_trigger_data_content_ad_sellers = TriggerDagRunOperator(
         task_id="task_trigger_dag_legacy_trigger_data_content_ad_sellers",
         trigger_dag_id="legacy_trigger_data-content_ad_sellers",
         wait_for_completion=True,
-        do_xcom_push=False,
+        conf={
+            "start_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="start_date")}}',
+            "end_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="end_date")}}',
+        },
     )
+
     trigger_dag_legacy_trigger_data_content_ads_created_daily = TriggerDagRunOperator(
         task_id="task_trigger_dag_legacy_trigger_data_content_ads_created_daily",
         trigger_dag_id="legacy_trigger_data-content_ads_created_daily",
         wait_for_completion=True,
-        do_xcom_push=False,
+        conf={
+            "start_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="start_date")}}',
+            "end_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="end_date")}}',
+        },
     )
     trigger_dag_legacy_trigger_data_revenues_incremental_product_order = TriggerDagRunOperator(
         task_id="task_trigger_trigger_dag_legacy_trigger_data_revenues_incremental_product_order",
         trigger_dag_id="legacy_trigger_data-revenues_incremental_product_order",
         wait_for_completion=True,
-        do_xcom_push=False,
+        conf={
+            "start_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="start_date")}}',
+            "end_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="end_date")}}',
+        },
     )
     trigger_dag_legacy_trigger_data_revenues_store_purshases = TriggerDagRunOperator(
         task_id="task_trigger_dag_legacy_trigger_data_revenues_store_purshases",
         trigger_dag_id="legacy_trigger_data-revenues_store-purshases",
         wait_for_completion=True,
-        do_xcom_push=False,
+        conf={
+            "start_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="start_date")}}',
+            "end_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="end_date")}}',
+        },
     )
-    trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico = TriggerDagRunOperator(
-        task_id="task_trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico",
-        trigger_dag_id="legacy_trigger_bi-insight-dw-blocketdb_etl_incremental_automatico",
-        wait_for_completion=True,
-        do_xcom_push=False,
-    )
+    # trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico = TriggerDagRunOperator(
+    #    task_id="task_trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico",
+    #    wait_for_completion=True,
+    #    trigger_dag_id="legacy_trigger_bi-insight-dw-blocketdb_etl_incremental_automatico",
+    #    do_xcom_push=False,
+    # )
 
     (
-        trigger_dag_legacy_trigger_data_content_ad_sellers
+        set_dates_process
+        >> trigger_dag_legacy_trigger_data_content_ad_sellers
         >> trigger_dag_legacy_trigger_data_content_ads_created_daily
         >> trigger_dag_legacy_trigger_data_revenues_incremental_product_order
         >> trigger_dag_legacy_trigger_data_revenues_store_purshases
-        >> trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico
+        # >> trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico
     )

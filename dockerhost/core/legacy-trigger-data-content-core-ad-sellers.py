@@ -65,6 +65,13 @@ def task_fail_slack_alert(context):
     return failed_alert.execute(context=context)
 
 
+def set_dates(**kwargs):
+    dates = get_date(**kwargs)
+    kwargs["ti"].xcom_push(key="start_date", value=dates["start_date"])
+    kwargs["ti"].xcom_push(key="end_date", value=dates["end_date"])
+    logging.info(f"detected days: {dates}")
+
+
 with models.DAG(
     dag_name,
     tags=dag_tags,
@@ -75,8 +82,7 @@ with models.DAG(
 ) as dag:
 
     def call_ssh(**kwargs):
-        dates = get_date(**kwargs)
-        logging.info(f"detected days: {dates}")
+        ti = kwargs["ti"]
         command_line = f"""--rm --net=host \
                             -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
                             -v /home/bnbiuser/secrets/blocket_db:/app/blocket-secret \
@@ -85,8 +91,11 @@ with models.DAG(
                             -e APP_DW_SECRET=/app/db-secret \
                             -e APP_SMTP_SECRET=/app/smtp-secret \
                             {docker_image} \
+                            -date_from={ ti.xcom_pull(task_ids="task_set_dates_trigger_ad_sellers", key="start_date") } \
+                            -date_to={ ti.xcom_pull(task_ids="task_set_dates_trigger_ad_sellers", key="end_date") } \
                             -email_from='noreply@yapo.cl' \
                             -email_to='gp_data_analytics@yapo.cl'"""
+
         call = ssh_operator.SSHOperator(
             task_id="task_run_add_sellers",
             ssh_hook=sshHook,
@@ -96,8 +105,14 @@ with models.DAG(
         )
         call.execute(context=kwargs)
 
+    set_dates_trigger_ad_sellers = python_operator.PythonOperator(
+        task_id="task_set_dates_trigger_ad_sellers",
+        provide_context=True,
+        python_callable=set_dates,
+    )
+
     run_add_sellers = python_operator.PythonOperator(
         task_id="task_run_add_sellers", provide_context=True, python_callable=call_ssh
     )
 
-    run_add_sellers
+    set_dates_trigger_ad_sellers >> run_add_sellers
