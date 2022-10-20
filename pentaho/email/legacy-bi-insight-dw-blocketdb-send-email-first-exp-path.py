@@ -5,6 +5,7 @@ from airflow import models
 from airflow.contrib.hooks.ssh_hook import SSHHook
 from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
 from airflow.contrib.operators.ssh_operator import SSHOperator
+from airflow.operators import python_operator
 from lib.get_dates import get_date
 
 # Common methods
@@ -58,6 +59,14 @@ def task_fail_slack_alert(context):
     return failed_alert.execute(context=context)
 
 
+def set_dates(**kwargs):
+    dates = get_date(**kwargs)
+    kwargs["ti"].xcom_push(key="start_date", value=dates["start_date"])
+    kwargs["ti"].xcom_push(key="end_date", value=dates["end_date"])
+    logging.info(f"start date to execute process: {dates['start_date']}")
+    logging.info(f"end date to execute process: {dates['end_date']}")
+
+
 with models.DAG(
     dag_name,
     tags=dag_tags,
@@ -67,11 +76,16 @@ with models.DAG(
     catchup=False,
     on_failure_callback=task_fail_slack_alert,
 ) as dag:
+    set_dates_email_first_exp_path = python_operator.PythonOperator(
+        task_id="task_set_dates_email_first_exp_path",
+        provide_context=True,
+        python_callable=set_dates,
+    )
 
     send_email_first_exp_path = SSHOperator(
         task_id="task_run_send_email_first_exp_path",
         ssh_hook=sshHook,
-        command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/send_email_first_exp_patch/run_jb_send_email_first_exp_patch.sh ",  # You need add a space at the end of the command, to avoid error: Jinja template not found
+        command='sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/send_email_first_exp_patch/run_jb_send_email_first_exp_patch.sh -date1="{{ ti.xcom_pull(task_ids="task_set_dates_email_first_exp_path", key="start_date") }}" -date2="{{ ti.xcom_pull(task_ids="task_set_dates_email_first_exp_path", key="end_date") }}" ',  # You need add a space at the end of the command, to avoid error: Jinja template not found
     )
 
-    send_email_first_exp_path
+    set_dates_email_first_exp_path >> send_email_first_exp_path
