@@ -85,7 +85,7 @@ with models.DAG(
     run_scarface_fraud_deleted = SSHOperator(
         task_id="task_run_scarface_fraud_deleted",
         ssh_hook=sshHook,
-        command='sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/Blocket/run_scarface_fraud_deleted.sh -date1="{{ ti.xcom_pull(task_ids="task_set_dates_scarface_fraud_deleted", key="start_date") }}" -date2="{{ ti.xcom_pull(task_ids="task_set_dates_scarface_fraud_deleted", key="end_date") }}" ',  # You need add a space at the end of the command, to avoid error: Jinja template not found
+        command='sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/Blocket/run_scarface_fraud_deleted.sh -d1="{{ ti.xcom_pull(task_ids="task_set_dates_scarface_fraud_deleted", key="start_date") }}" -d2="{{ ti.xcom_pull(task_ids="task_set_dates_scarface_fraud_deleted", key="end_date") }}" ',  # You need add a space at the end of the command, to avoid error: Jinja template not found
     )
 
     set_dates_scarface_fraud_deleted >> run_scarface_fraud_deleted
