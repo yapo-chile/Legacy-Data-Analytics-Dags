@@ -7,6 +7,7 @@ from airflow.contrib.operators import ssh_operator
 from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
 from airflow.models.variable import Variable
 from airflow.operators import python_operator
+from lib.get_dates import get_date
 
 # Common methods
 from lib.slack_msg import slack_msg_body
@@ -73,6 +74,8 @@ with models.DAG(
 ) as dag:
 
     def call_ssh(**kwargs):
+        dates = get_date(**kwargs)
+        logging.info(f"detected days: {dates}")
         command_line = f"""--rm --net=host \
                             -v /home/bnbiuser/secrets/pulse_auth:/app/pulse-secret \
                             -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
@@ -80,7 +83,9 @@ with models.DAG(
                             -e APP_DB_SECRET=/app/db-secret \
                             {docker_image} \
                             -email_from='noreply@yapo.cl' \
-                            -email_to='data_team@adevinta.com'"""
+                            -email_to='data_team@adevinta.com' \
+                            -date_from={dates['start_date']} \
+                            -date_to={dates['end_date']}"""
         call = ssh_operator.SSHOperator(
             task_id="task_re_segmented_metrics",
             ssh_hook=sshHook,

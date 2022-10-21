@@ -73,9 +73,13 @@ with models.DAG(
 ) as dag:
 
     def call_ssh(**kwargs):
+        dates = get_date(**kwargs)
+        logging.info(f"detected days: {dates}")
         command_line = f"""--rm -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
                 -e APP_DW_SECRET=/app/db-secret \
-                {docker_image}"""
+                {docker_image} \
+                -date_from={dates['start_date']} \
+                -date_to={dates['end_date']}"""
         call = ssh_operator.SSHOperator(
             task_id="task_csat_and_quality_reviews",
             ssh_hook=sshHook,
