@@ -80,7 +80,7 @@ with models.DAG(
         kwargs["ti"].xcom_push(key="start_date", value=dates["start_date"])
         kwargs["ti"].xcom_push(key="end_date", value=dates["end_date"])
         logging.info(f"detected days: {dates}")
-        command_line = f"""--rm -v /home/bnbiuser/secrets/blocket_db:/app/db-blocket \
+        command_line = f"""--rm -v /home/bnbiuser/secrets/blocket_db_claro:/app/db-blocket \
                 -v /home/bnbiuser/secrets/dw_db:/app/db-secret \
                 -e APP_BLOCKET_SECRET=/app/db-blocket \
                 -e APP_DB_SECRET=/app/db-secret \

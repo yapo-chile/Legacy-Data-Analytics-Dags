@@ -76,7 +76,7 @@ with models.DAG(
     def call_ssh(**kwargs):
         dates = get_date(**kwargs)
         logging.info(f"detected days: {dates}")
-        command_line = f"""--net=host --rm -v /home/bnbiuser/secrets/blocket_db:/app/db-secret \
+        command_line = f"""--net=host --rm -v /home/bnbiuser/secrets/blocket_db_claro:/app/db-secret \
                         -e APP_DB_SECRET=/app/db-secret \
                         {docker_image} \
                         -email_from='noreply@yapo.cl'"""
