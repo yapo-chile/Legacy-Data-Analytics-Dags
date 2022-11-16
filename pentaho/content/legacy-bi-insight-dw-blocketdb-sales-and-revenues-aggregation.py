@@ -5,6 +5,7 @@ from airflow import models
 from airflow.contrib.hooks.ssh_hook import SSHHook
 from airflow.contrib.operators.slack_webhook_operator import SlackWebhookOperator
 from airflow.contrib.operators.ssh_operator import SSHOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from lib.get_dates import get_date
 
 # Common methods
@@ -74,4 +75,13 @@ with models.DAG(
         command="sh /opt/dw_schibsted/yapo_bi/dw_blocketdb/finance/run_etl_sales_revenues.sh ",  # You need add a space at the end of the command, to avoid error: Jinja template not found
     )
 
-    run_sales_and_revenues_aggregation
+    trigger_dag_composer_pipeline_tableau_marketing_kpis = TriggerDagRunOperator(
+        task_id="task_trigger_dag_composer_pipeline_tableau_marketing_kpis",
+        trigger_dag_id="composer_pipeline_tableau_marketing_kpis",
+        wait_for_completion=True,
+    )
+
+    (
+        run_sales_and_revenues_aggregation
+        >> trigger_dag_composer_pipeline_tableau_marketing_kpis
+    )
