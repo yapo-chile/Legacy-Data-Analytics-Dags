@@ -122,7 +122,10 @@ with models.DAG(
         task_id="task_trigger_dag_legacy_trigger_bi_insight_dw_blocketdb_etl_incremental_automatico",
         wait_for_completion=True,
         trigger_dag_id="legacy_trigger_bi-insight-dw-blocketdb_etl_incremental_automatico",
-        do_xcom_push=False,
+        conf={
+            "start_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="start_date")}}',
+            "end_date": '{{ti.xcom_pull(task_ids="task_set_dates_ad_sellers", key="end_date")}}',
+        },
     )
 
     (
